@@ -18,9 +18,10 @@ Dieses Skript erstellt ein vollständiges Backup wichtiger Konfigurationsdateien
 1. Erstellt ein temporäres Backup-Verzeichnis unter `/var/backups/proxmox-config-<Datum>/`
 2. Sichert alle oben genannten Dateien dorthin
 3. Erzeugt ein komprimiertes `.tar.gz`-Archiv
-4. Löscht das temporäre Verzeichnis
-5. Kopiert das Archiv nach `/mnt/storagebox/pve-config-backups` (falls gemountet)
-6. Löscht lokal und auf der Storagebox alte `.tar.gz`-Backups, sodass nur die **7 neuesten** erhalten bleiben
+4. Erzeugt zusätzlich eine `.sha256`-Prüfsummendatei zur Integritätsprüfung
+5. Löscht das temporäre Verzeichnis
+6. Kopiert Archiv und Prüfsumme nach `/mnt/storagebox/pve-config-backups` (falls gemountet)
+7. Löscht lokal und auf der Storagebox alte `.tar.gz`-Backups + `.sha256`, sodass nur die **7 neuesten** erhalten bleiben
 
 ## 📧 Fehlerbehandlung
 
@@ -29,8 +30,8 @@ Dieses Skript erstellt ein vollständiges Backup wichtiger Konfigurationsdateien
 ## ✅ Verwendung
 
 ```bash
-chmod +x backup-proxmox-config-<Datum>.sh
-./backup-proxmox-config-<Datum>.sh
+chmod +x backup-proxmox-config-with-checksum.sh
+./backup-proxmox-config-with-checksum.sh
 ```
 
 ## 📅 Automatisierung
@@ -38,9 +39,11 @@ chmod +x backup-proxmox-config-<Datum>.sh
 Das Skript kann z. B. via `cron` regelmäßig ausgeführt werden. Beispiel für täglichen Cronjob um 3:00 Uhr:
 
 ```bash
-0 3 * * * /root/backup-proxmox-config-<Datum>.sh
+0 3 * * * /root/backup-proxmox-config-with-checksum.sh
 ```
 
 ## 📝 Hinweis
 
-Stelle sicher, dass `/mnt/storagebox` korrekt gemountet ist, bevor du das Skript verwendest.
+- Stelle sicher, dass `/mnt/storagebox` korrekt gemountet ist, bevor du das Skript verwendest.
+- Das `.tar.gz`-Archiv enthält alle Konfigdateien – die Einzeldateien werden nach der Archivierung gelöscht.
+- Eine `.sha256`-Datei wird zur Archivüberprüfung mitgeliefert.
