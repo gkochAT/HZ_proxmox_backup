@@ -6,6 +6,7 @@ set -euo pipefail
 TIMESTAMP=$(date +%Y%m%d-%H%M%S)
 BACKUP_DIR="/var/backups/proxmox-config-$TIMESTAMP"
 ARCHIVE="/var/backups/proxmox-config-$TIMESTAMP.tar.gz"
+CHECKSUM="$ARCHIVE.sha256"
 STORAGEBOX_TARGET="/mnt/storagebox/pve-config-backups"
 
 log() {
@@ -68,14 +69,18 @@ chmod 600 "$BACKUP_DIR/backup-credentials.txt" 2>/dev/null || log "⚠️  Konnt
 log "📦 Erstelle Archiv: $ARCHIVE ..."
 tar -czf "$ARCHIVE" -C "$(dirname "$BACKUP_DIR")" "$(basename "$BACKUP_DIR")" || fail "Archivierung fehlgeschlagen"
 
-# 🗑️ Backup-Verzeichnis löschen – nur Archiv behalten
+# 🔑 Prüfsumme erzeugen
+log "🔑 Erstelle Prüfsumme: $CHECKSUM ..."
+sha256sum "$ARCHIVE" > "$CHECKSUM" || log "⚠️ Prüfsumme konnte nicht erstellt werden"
+
+# 🗑️ Backup-Verzeichnis löschen – nur Archiv + Prüfsumme behalten
 log "🗑️ Lösche temporäres Verzeichnis: $BACKUP_DIR"
 rm -rf "$BACKUP_DIR"
 
-# 📤 Auf Storagebox kopieren (wenn vorhanden)
+# 📤 Auf Storagebox kopieren (falls vorhanden)
 if [ -n "$STORAGEBOX_TARGET" ]; then
-    log "📤 Übertrage Archiv nach: $STORAGEBOX_TARGET ..."
-    cp "$ARCHIVE" "$STORAGEBOX_TARGET/" || fail "Kopieren zur Storagebox fehlgeschlagen"
+    log "📤 Übertrage Archiv + Prüfsumme nach: $STORAGEBOX_TARGET ..."
+    cp "$ARCHIVE" "$CHECKSUM" "$STORAGEBOX_TARGET/" || fail "Kopieren zur Storagebox fehlgeschlagen"
     log "✅ Archiv erfolgreich übertragen."
 fi
 
@@ -86,6 +91,7 @@ BACKUPS_TO_DELETE_LOCAL=("${BACKUPS_LOCAL[@]:7}")
 for OLD in "${BACKUPS_TO_DELETE_LOCAL[@]}"; do
     log "🗑️  Lokal löschen: $OLD"
     rm -f "$OLD"
+    [ -f "$OLD.sha256" ] && rm -f "$OLD.sha256"
 done
 
 # 🧹 Auch auf der Storagebox bereinigen (falls vorhanden)
@@ -96,10 +102,12 @@ if [ -n "$STORAGEBOX_TARGET" ]; then
     for OLD in "${BACKUPS_TO_DELETE_REMOTE[@]}"; do
         log "🗑️  Storagebox löschen: $OLD"
         rm -f "$OLD"
+        [ -f "$OLD.sha256" ] && rm -f "$OLD.sha256"
     done
 fi
 
 # ✅ Abschlussmeldung
 log "✅ Backup abgeschlossen:"
 log "   📦 Archiv: $ARCHIVE"
+log "   🔐 Prüfsumme: $CHECKSUM"
 [ -n "$STORAGEBOX_TARGET" ] && log "   ☁️  Kopiert nach: $STORAGEBOX_TARGET"
