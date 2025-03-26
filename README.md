@@ -2,6 +2,7 @@
 Proxmox Backup Script für Hetzner Root Server
 
 Dieses Skript sichert wichtige Konfigurationsdateien deines Proxmox-Servers vor einer Neuinstallation.
+Hinweis: Die Datei backup-credentials.txt enthält sensible Zugangsdaten – bitte vorsichtig behandeln.
 
 ## Was wird gesichert?
 
@@ -12,12 +13,10 @@ Dieses Skript sichert wichtige Konfigurationsdateien deines Proxmox-Servers vor 
 - Proxmox-Storage-Konfiguration: `/etc/pve/storage.cfg`
 - Storagebox-Zugangsdaten: `/etc/backup-credentials.txt`
 
+## Das Backup wird im Verzeichnis /root/pve-backup-<Datum> abgelegt.
+
 ## Verwendung
 
 ```bash
 chmod +x backup-proxmox-config.sh
 ./backup-proxmox-config.sh
-
-## Das Backup wird im Verzeichnis /root/pve-backup-<Datum> abgelegt.
-
-## Hinweis: Die Datei backup-credentials.txt enthält sensible Zugangsdaten – bitte vorsichtig behandeln.
